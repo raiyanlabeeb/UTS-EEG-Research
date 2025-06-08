@@ -1,0 +1,10 @@
+@"
+# Ignore EEG data files
+*.fif
+*.set
+*.bdf
+*.edf
+dataset/
+UTS-EEG-Research/
+Tactile Stimulation in a Healthy Mexican Sample An EEG Database.zip
+"@ | Out-File -FilePath .gitignore -Encoding utf8
