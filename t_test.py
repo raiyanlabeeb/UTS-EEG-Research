@@ -501,7 +501,7 @@ def plot_stim_type_channels(stim_type, channels, data_dir):
     plt.tight_layout()
     plt.show()
 
-def plot_erp_topographies(evoked, times, title=None, figsize=(15, 5)):
+# def plot_erp_topographies(evoked, times, title=None, figsize=(15, 5)):
     """
     Plot ERP component topographies at specific time points.
     
@@ -542,6 +542,25 @@ def plot_erp_topographies(evoked, times, title=None, figsize=(15, 5)):
     plt.tight_layout()
     plt.show()
 
+def create_topography(evoked, times, title=None, figsize=(15, 5)):
+    """
+    Create a topography plot for a given evoked object at specific time points.
+    
+    Parameters
+    ----------
+    evoked : mne.Evoked
+        The evoked EEG data object
+    times : list of float
+        List of time points (in seconds) to plot topographies
+    title : str, optional
+        Main title for the figure
+    figsize : tuple, optional
+        Figure size in inches (width, height)
+    """
+
+    evoked.plot_topomap(times=times, show=False, ch_type='eeg')
+    plt.show()
+
 def main():
     # Specify the directory containing all subject data
     data_dir = 'dataset/ValidationEvokedActivity'
@@ -568,6 +587,8 @@ def main():
     
     # Plot topographies at key ERP time points (in seconds)
     times = [0.1, 0.2, 0.3, 0.4]  # 100ms, 200ms, 300ms, 400ms
-    plot_erp_topographies(evoked, times, title="ERP Topographies for Car4 Condition")
+
+    create_topography(evoked, times, title="ERP Topographies for Car4 Condition")
+
 
 main()
