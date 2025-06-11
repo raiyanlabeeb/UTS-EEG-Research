@@ -9,6 +9,7 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import ttk
+from mne.time_frequency import tfr_morlet
 import warnings
 
 # Suppress all warnings
@@ -542,32 +543,23 @@ def plot_stim_type_channels(stim_type, channels, data_dir):
     plt.tight_layout()
     plt.show()
 
-def create_topography(evoked, times, title=None, figsize=(15, 5)):
+def plot_erp_topography(stim_type, times,  data_dir, figsize=(15, 5),):
     """
     Create a topography plot for a given evoked object at specific time points.
-    
+    ERP: Event-Related Potential: Looking at voltage changes over time
+   
     Parameters
     ----------
-    evoked : mne.Evoked
-        The evoked EEG data object
+    stim_type : type of stimulus ('Car', 'Air', or 'Vib')
     times : list of float
         List of time points (in seconds) to plot topographies
-    title : str, optional
-        Main title for the figure
+    data_dir : str
+        Directory containing the data
     figsize : tuple, optional
         Figure size in inches (width, height)
     """
-
-    evoked.plot_topomap(times=times, show=False, ch_type='eeg')
-    plt.show()
-
-def main():
-    # Specify the directory containing all subject data
-    data_dir = 'dataset/ValidationEvokedActivity'
-    
-    # Example 1: Plot ERP topographies for Car4 condition
-    # Get data for Car4 condition
-    _, _, data_stim1, _, ch_names, _, num_time_points = ttest('Car4', 'Car4', data_dir)
+    # Get data for condition
+    _, _, data_stim1, _, ch_names, _, _ = ttest(stim_type, stim_type, data_dir)
     
     # Calculate average across subjects
     avg_stim = np.mean(data_stim1, axis=0)  # shape: (n_channels, n_time)
@@ -584,11 +576,83 @@ def main():
     #standard_1020: a standard montage that is used in EEG research
     montage = mne.channels.make_standard_montage('standard_1020') #tells MNE where each electrode is located on the head
     evoked.set_montage(montage)
+
+    # Plot the topomap and get the figure
+    fig = evoked.plot_topomap(times=times, show=False, ch_type='eeg')
+    
+    # Adjust the layout to make room for the title
+    fig.subplots_adjust(top=0.85)
+    
+    # Add the title
+    fig.suptitle("ERP Topographies for " + stim_type + " Condition", y=0.95)
+    
+    plt.show()
+
+def plot_ersp_topography(stim_type, times, freqs, data_dir, figsize=(15, 10)):
+    """
+    Plot ERSP topographies for specific frequencies and time points.
+
+    Parameters
+    ----------
+    stim_type : str
+        Stimulus type ('Car', 'Air', 'Vib', etc.)
+    times : list of float
+        Time points in seconds (e.g., [0.1, 0.2])
+    freqs : list of float
+        Frequencies in Hz (e.g., [8, 13, 20, 30])
+    data_dir : str
+        Path to EEG data
+    figsize : tuple
+        Size of the figure
+    """
+
+    # Load data
+    _, _, data_stim1, _, ch_names, _, _ = ttest(stim_type, stim_type, data_dir)
+    avg_stim = np.mean(data_stim1, axis=0)  # shape: (n_channels, n_time)
+    
+    # Create EpochsArray with one fake trial
+    info = mne.create_info(ch_names=ch_names, sfreq=1000, ch_types='eeg')
+    epochs = mne.EpochsArray(avg_stim[np.newaxis, :, :], info)
+
+    # Define Morlet wavelet params
+    all_freqs = np.arange(min(freqs), max(freqs) + 1, 1)
+    n_cycles = all_freqs / 2.0
+    power = tfr_morlet(epochs, freqs=all_freqs, n_cycles=n_cycles, return_itc=False)
+
+    # No baseline (since your data starts at 0s)
+    # power.apply_baseline(baseline=(0, 0.1), mode='logratio')  # Optional
+
+    # Set montage
+    montage = mne.channels.make_standard_montage('standard_1020')
+    power.info.set_montage(montage)
+
+    # Create topomap grid
+    fig, axes = plt.subplots(len(freqs), len(times), figsize=figsize)
+    fig.suptitle(f"ERSP Topographies for {stim_type}", fontsize=16)
+
+    for i, freq in enumerate(freqs):
+        for j, t in enumerate(times):
+            ax = axes[i, j] if len(freqs) > 1 else axes[j]
+            power.plot_topomap(
+                tmin=t, tmax=t, fmin=freq, fmax=freq,
+                axes=ax, show=False, colorbar=False, ch_type='eeg', cmap='RdBu_r'
+            )
+            ax.set_title(f"{freq} Hz, {int(t*1000)} ms", fontsize=9)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+
+def main():
+    # Specify the directory containing all subject data
+    data_dir = 'dataset/ValidationEvokedActivity'
     
     # Plot topographies at key ERP time points (in seconds)
     times = [0.1, 0.2, 0.3, 0.4]  # 100ms, 200ms, 300ms, 400ms
+    freqs = [8, 13, 20, 30]
+    # plot_erp_topography('Vib4', times, data_dir=data_dir) 
+    plot_ersp_topography('Vib4', times, freqs, data_dir=data_dir)
 
-    create_topography(evoked, times, title="ERP Topographies for Car4 Condition")
 
 
 main()
