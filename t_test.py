@@ -642,7 +642,6 @@ def plot_ersp_topography(stim_type, times, freqs, data_dir, figsize=(15, 10)):
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
 
-
 def main():
     # Specify the directory containing all subject data
     data_dir = 'dataset/ValidationEvokedActivity'
@@ -651,7 +650,7 @@ def main():
     times = [0.1, 0.2, 0.3, 0.4]  # 100ms, 200ms, 300ms, 400ms
     freqs = [8, 13, 20, 30]
     # plot_erp_topography('Vib4', times, data_dir=data_dir) 
-    plot_ersp_topography('Vib4', times, freqs, data_dir=data_dir)
+    plot_ersp_topography('Air4', times, freqs, data_dir=data_dir)
 
 
 
